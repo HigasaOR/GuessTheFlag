@@ -22,6 +22,10 @@ struct ContentView: View {
     @State private var showingGameEnd = false
     private let gameEndTitle = "Game Ended"
 
+    // for animation
+    @State private var flagOpacity = [1.0, 1.0, 1.0]
+    @State private var flagRotation = [0.0, 0.0, 0.0]
+
     var body: some View {
         ZStack {
             RadialGradient(stops: [
@@ -49,9 +53,13 @@ struct ContentView: View {
                     ForEach(0 ..< 3) { number in
                         Button {
                             // flag was tap
-                            flagTapped(number)
+                            Task {
+                                await flagTapped(number)
+                            }
                         } label: {
                             ImageView(countries[number])
+                                .opacity(flagOpacity[number])
+                                .rotationEffect(.degrees(flagRotation[number]))
                         }
                     }
                 }
@@ -91,15 +99,29 @@ struct ContentView: View {
         }
     }
 
-    func flagTapped(_ number: Int) {
+    func flagTapped(_ number: Int) async {
+        for i in 0 ... 2 {
+            if i != number {
+                withAnimation {
+                    flagOpacity[i] = 0.25
+                }
+            } else {
+                withAnimation {
+                    flagRotation[i] = 360
+                }
+            }
+        }
+
         if number == correctAnswer {
             score += 1
             scoreTitle = "Correct"
             alertMessage = "That's correct! Your score is now \(score)"
+            try? await Task.sleep(nanoseconds: 600000000)
             showingCorrect = true
         } else {
             scoreTitle = "Wrong"
             alertMessage = "Oops! That's the flag of \(countries[number])"
+            try? await Task.sleep(nanoseconds: 600000000)
             showingWrong = true
         }
     }
@@ -112,6 +134,9 @@ struct ContentView: View {
             correctAnswer = Int.random(in: 0 ... 2)
             questionNumber += 1
         }
+
+        flagOpacity = [1.0, 1.0, 1.0]
+        flagRotation = [0.0, 0.0, 0.0]
     }
 
     func reset() {
